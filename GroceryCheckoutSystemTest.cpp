@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
-
 using namespace std;
+
 const int MAX_USER = 255;
 const int MAX_INVENTORY = 255;
 int userCount = 0;
@@ -91,6 +91,8 @@ public:
 
 void mergeSort(string arr[], int l, int r, bool ascending = true);
 int binarySearchUser(const User users[], int left, int right, const string& partial);
+void binarySearchProductName(ListNode* head, const string& partial);
+int binarySearchInventory(ListNode* head, int left, int right, int productID);
 
 class inventoryManage
 {
@@ -202,13 +204,26 @@ class inventoryManage
         while (current != nullptr) {
             if (current->inventory.ProductID == productID)
             {
-                current->inventory.ProductName = newProductName;
-                current->inventory.ProductType = newProductType;
-                current->inventory.ProductPrice = newProductPrice;
-                current->inventory.ProductQuantity = newProductQuantity;
-                cout << "Inventory details updated successfully." << endl;
+                if (!newProductName.empty()) {
+                    current->inventory.ProductName = newProductName;
+                }
+                if (!newProductType.empty()) {
+                    current->inventory.ProductType = newProductType;
+                }
+                if (newProductPrice >= 0) {  // Assuming -1 or any negative value means "no update"
+                    current->inventory.ProductPrice = newProductPrice;
+                }
+                if (newProductQuantity >= 0) {  // Assuming -1 or any negative value means "no update"
+                    current->inventory.ProductQuantity = newProductQuantity;
+                }
 
-                updateInventoryFile();
+                if (!newProductName.empty() || !newProductType.empty() || newProductPrice >= 0 || newProductQuantity >= 0) {
+                    cout << "Inventory details updated successfully." << endl;
+                    updateInventoryFile();
+                }
+                else {
+                    cout << "No new information provided. Inventory details remain unchanged." << endl;
+                }
                 return;
             }
             current = current->next;
@@ -216,6 +231,8 @@ class inventoryManage
 
         cout << "Inventory with Product ID " << productID << " not found." << endl;
     }
+
+
 
     void displayInventory() const
     {
@@ -227,11 +244,11 @@ class inventoryManage
 
         ListNode* current = head;
         while (current != nullptr) {
-            cout << "| " << setw(3) << left << (count + 1)
+            cout << "| "  << setw( 3) << left << current->inventory.ProductID
                  << " | " << setw(13) << left << current->inventory.ProductName
                  << " | " << setw(21) << left << current->inventory.ProductType
-                 << " | " << setw(9) << right << fixed << setprecision(2) << current->inventory.ProductPrice
-                 << " | " << setw(9) << right << current->inventory.ProductQuantity << " |\n";
+                 << " | " << setw( 9) << right << fixed << setprecision(2) << current->inventory.ProductPrice
+                 << " | " << setw( 9) << right << current->inventory.ProductQuantity << " |\n";
 
             if (++count % 5 == 0) {
                 cout << border;
@@ -243,6 +260,144 @@ class inventoryManage
         } else {
             cout << border;
         }
+    }
+
+    void sortInventoryByName()
+    {
+        bool swapped;
+        ListNode* current;
+        ListNode* last = nullptr;
+
+        if (head == nullptr)
+            return;
+
+        do {
+            swapped = false;
+            current = head;
+
+            while (current->next != last) {
+                if (current->inventory.ProductName > current->next->inventory.ProductName) {
+                    swap(current->inventory, current->next->inventory);
+                    swapped = true;
+                }
+                current = current->next;
+            }
+            last = current;
+        } while (swapped);
+    }
+
+    void sortInventoryByProductID()
+    {
+        bool swapped;
+        ListNode* current;
+        ListNode* last = nullptr;
+
+        if (head == nullptr)
+            return;
+
+        do
+        {
+            swapped = false;
+            current = head;
+
+            while (current->next != last) {
+                if (current->inventory.ProductID > current->next->inventory.ProductID) {
+                    swap(current->inventory, current->next->inventory);
+                    swapped = true;
+                }
+                current = current->next;
+            }
+            last = current;
+        }while (swapped);
+    };
+
+    void sortInventoryByProductType()
+    {
+        bool swapped;
+        ListNode* current;
+        ListNode* last = nullptr;
+
+        if (head == nullptr)
+            return;
+
+        do {
+            swapped = false;
+            current = head;
+
+            while (current->next != last) {
+                if (current->inventory.ProductType > current->next->inventory.ProductType) {
+                    swap(current->inventory, current->next->inventory);
+                    swapped = true;
+                }
+                current = current->next;
+            }
+            last = current;
+        } while (swapped);
+    }
+
+    void sortInventoryByPrice()
+    {
+        bool swapped;
+        ListNode* current;
+        ListNode* last = nullptr;
+
+        if (head == nullptr)
+            return;
+
+        do {
+            swapped = false;
+            current = head;
+
+            while (current->next != last) {
+                if (current->inventory.ProductPrice > current->next->inventory.ProductPrice) {
+                    swap(current->inventory, current->next->inventory);
+                    swapped = true;
+                }
+                current = current->next;
+            }
+            last = current;
+        } while (swapped);
+    }
+
+    void deleteInventoryByID(int productID)
+    {
+        ListNode* current = head;
+        ListNode* prev = nullptr;
+        bool found = false;
+
+        // 遍历链表查找对应的productID
+        while (current != nullptr) {
+            if (current->inventory.ProductID == productID) {
+                found = true;
+                break;
+            }
+            prev = current;
+            current = current->next;
+        }
+
+        if (found) {
+            if (prev == nullptr) {
+                head = current->next;
+            } else {
+                prev->next = current->next;
+            }
+
+            delete current;
+
+            cout << "Inventory with Product ID " << productID << " deleted successfully." << endl;
+
+            inventoryCount--;
+            updateInventoryFile();
+        } else {
+            cout << "Inventory with Product ID " << productID << " not found." << endl;
+        }
+    }
+
+
+    void searchProductByName(const string& partial)
+    {
+        cout << "Products matching '" << partial << "':" << endl;
+        binarySearchProductName(head, partial);
     }
 };
 
@@ -399,12 +554,109 @@ class Admin : public User
 
 public :
 
-    Admin(inventoryManage* inventoryM)
-    {
+    Admin(inventoryManage* inventoryM) {
         InventoryManage = inventoryM;
-    };
+    }
 
-    void AddNewInventory() {
+    void searchInventory()
+    {
+        string SearchName;
+        cout << "Enter product Name that will be edited :";
+        cin >> SearchName;
+
+        InventoryManage->searchProductByName(SearchName);
+    }
+
+    void EditInventory()
+    {
+        int productId;
+        int currentIndex = 0;
+        int userChoice;
+        int productTypeInput;
+
+        string NewProductName = "";
+        string NewProductType = "";
+        double NewProductPrice = -1;
+        int NewProductQuantity = -1;
+
+        InventoryManage->displayInventory();
+        cout << "Enter product Id that will be edited: ";
+        cin >> productId; // Corrected cin syntax.
+
+        cout << "Please select the field that you want to edit: " << endl;
+        cout << "1. Product Name" << endl;
+        cout << "2. Product Type" << endl;
+        cout << "3. Product Price" << endl;
+        cout << "4. Product Quantity" << endl;
+        cin >> userChoice;
+
+        switch (userChoice)
+        {
+            case 1:
+                cout << "Enter new product name: ";
+                cin >> NewProductName;
+                break;
+            case 2:
+                do {
+                    cout << "Select the product type: " << endl;
+                    cout << "1. Fruit And Vegetable" << endl;
+                    cout << "2. Condiments And Spices" << endl;
+                    cout << "3. Snacks" << endl;
+                    cout << "4. Beverages" << endl;
+                    cout << "5. Personal Care" << endl;
+                    cout << "6. Health Care" << endl;
+                    cout << "7. Others" << endl;
+
+                    cin >> productTypeInput;
+
+                    switch (productTypeInput) {
+                        case 1:
+                            NewProductType = "Fruit And Vegetable";
+                            break;
+                        case 2:
+                            NewProductType = "Condiments And Spices";
+                            break;
+                        case 3:
+                            NewProductType = "Snacks";
+                            break;
+                        case 4:
+                            NewProductType = "Beverages";
+                            break;
+                        case 5:
+                            NewProductType = "Personal Care";
+                            break;
+                        case 6:
+                            NewProductType = "Health Care";
+                            break;
+                        case 7:
+                            cout << "Because of your selection, you must enter a product type: ";
+                            cin >> NewProductType;
+                            break;
+                        default:
+                            cout << "Invalid selection. Please try again." << endl;
+                            continue;
+                    }
+                } while (productTypeInput < 1 || productTypeInput > 7);
+                break;
+            case 3:
+                cout << "Enter new product price: ";
+                cin >> NewProductPrice;
+                break;
+            case 4:
+                cout << "Enter new product quantity: ";
+                cin >> NewProductQuantity;
+                break;
+            default:
+                cout << "Invalid selection. Please try again." << endl;
+                break;
+        }
+
+        InventoryManage->editInventory(productId, NewProductName, NewProductType, NewProductPrice, NewProductQuantity);
+    }
+
+
+    void AddNewInventory()
+    {
         string productName;
         string productType;
         double productPrice;
@@ -463,6 +715,31 @@ public :
         cin >> productQuantity;
 
         InventoryManage->addNewInventory(productName, productType, productPrice, productQuantity);
+    }
+
+    void DeleteProduct()
+    {
+        int productId;
+
+        InventoryManage->displayInventory();
+        cout << "Enter product Id that will be deleted :";
+        cin >> productId;
+
+        InventoryManage->deleteInventoryByID(productId);
+    }
+
+    void AdminMenu()
+    {
+    cout << "Inventory Management System" << endl;
+    cout << "1. Add new inventory" << endl;
+    cout << "2. Edit inventory" << endl;
+    cout << "3. Delete inventory" << endl;
+    cout << "4. Search product by name" << endl;
+    cout << "5. Sort inventory by name" << endl;
+    cout << "6. Sort inventory by product type" << endl;
+    cout << "7. Sort inventory by price" << endl;
+    cout << "8. Display inventory" << endl;
+    cout << "9. Exit" << endl;
     }
 
 };
@@ -735,6 +1012,39 @@ int binarySearchUser(const User users[], int left, int right, const string& part
     return -1;  // Return -1 if not found
 }
 
+int binarySearchInventory(ListNode* head, int left, int right, int productID)
+    {
+        if (right >= left) {
+            int mid = left + (right - left) / 2;
+
+            // If the element is present at the middle itself
+            if (head->inventory.ProductID == productID)
+                return mid;
+
+            // If element is smaller than mid, then it can only be present in left subarray
+            if (head->inventory.ProductID > productID)
+                return binarySearchInventory(head->next, left, mid - 1, productID);
+
+            // Else the element can only be present in right subarray
+            return binarySearchInventory(head->next, mid + 1, right, productID);
+        }
+
+        // We reach here when the element is not present in the list
+        return -1;
+}
+
+void binarySearchProductName(ListNode* head, const string& partial)
+{
+    if (head == nullptr)
+        return;
+
+    if (head->inventory.ProductName.find(partial) != string::npos) {
+        cout << "Product ID: " << head->inventory.ProductID << ", Product Name: " << head->inventory.ProductName << endl;
+    }
+
+    binarySearchProductName(head->next, partial);
+}
+
 // The main function to start the program
 int main()
 {
@@ -792,10 +1102,86 @@ int main()
                     else if (currentUser->role == "2")
                     {
                         inventoryManage.loadInventory();
+                        Admin admin(&inventoryManage);
+
+                        int AdminChoice;
+                        int userChoice;
+                        string partial;
 
                         cout << "Welcome to the Cashier Management System, " << currentUser->username << "!" << endl;
                         system("pause");
                         system("cls");
+
+                        do
+                        {
+                            admin.AdminMenu();
+                            cout <<"Enter your choice: ";
+                            cin >> AdminChoice;
+
+                            switch (AdminChoice)
+                            {
+                                case 1:
+                                {
+                                    admin.AddNewInventory();
+                                    break;
+                                }
+                                case 2:
+                                {
+                                    admin.EditInventory();
+                                    break;
+
+                                }
+                                case 3:
+                                {
+                                    admin.DeleteProduct();
+                                    break;
+                                }
+                                case 4:
+                                {
+                                    admin.searchInventory();
+                                    break;
+                                }
+                                case 5:
+                                {
+                                    inventoryManage.sortInventoryByName();
+                                    inventoryManage.displayInventory();
+                                    system("pause");
+                                    break;
+                                }
+                                case 6:
+                                {
+                                    inventoryManage.sortInventoryByProductType();
+                                    inventoryManage.displayInventory();
+                                    system("pause");
+                                    break;
+                                }
+                                case 7:
+                                {
+                                    inventoryManage.sortInventoryByPrice();
+                                    inventoryManage.displayInventory();
+                                    system("pause");
+                                    break;
+                                }
+                                case 8:
+                                {
+                                    inventoryManage.sortInventoryByProductID();
+                                    inventoryManage.displayInventory();
+                                    system("pause");
+                                    break;
+                                }
+                                case 9:
+                                {
+                                    cout << "Logging out" << endl;
+                                    system("pause");
+                                    system("cls");
+                                    break;
+                                }
+                                default:
+                                {
+                                    cout << "Invalid choice. Please enter a number between 1 and 9." << endl;
+                                }
+                            }
+                        }while(AdminChoice != 9);
                     }
                     else if (currentUser->role == "3")
                     {
